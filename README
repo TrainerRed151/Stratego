@@ -1,0 +1,1 @@
+Stratego interface which uses the Pedersen Commitment Scheme to allow correspondence play.  The 2048-but MODP Group from RFC 3526 - Modular Exponential (MODP) Diffie-Hellman groups for Internet Key Exchange (IKE) https://tools.ietf.org/html/rfc3526 is used.
