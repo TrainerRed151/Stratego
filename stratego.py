@@ -7,6 +7,12 @@ g = 2
 
 size = 10
 
+def cToA(c):
+    return chr(ord('A')+c)
+
+def AToc(a):
+    return ord(a) - ord('A')
+
 class Piece:
     def __init__(self, sLoc, mine, color, v=0):
         self.sLoc = sLoc
@@ -24,9 +30,16 @@ class Piece:
             self.h = pow(g, a, p)
 
     def __str__(self):
-        vv = str(self.v)
         if self.v == 0:
             vv = '?'
+        elif self.v == 10:
+            vv = 'S'
+        elif self.v == 11:
+            vv = 'b'
+        elif self.v == 12:
+            vv = 'F'
+        else:
+            vv = str(self.v)
         return self.color + vv
 
     def commit(self, c=0):
@@ -35,8 +48,8 @@ class Piece:
         else:
             self.c = c
 
-    def getH(self, h):
-        if self.mine:
+    def setH(self, h):
+        if self.mine and 0 < h < p:
             self.h = h
 
     def setV(self, v):
@@ -48,8 +61,8 @@ class Piece:
             self.r = r
 
     def verify(self, v, r):
-        setV(v)
-        setR(r)
+        self.setV(v)
+        self.setR(r)
         if ~self.mine:
             return self.c == (pow(g, self.v, p)*pow(self.h, self.r, p)) % p
         else:
@@ -62,13 +75,16 @@ class Board:
         for r in range(size):
             temp = []
             for c in range(size):
+                val = 0
                 if r <= 3:
-                    # read in val
-                    val = 0
+                    if color == 'R':
+                        #val = int(input("%s%d: " % (cToA(c), r)))
+                        pass
                     temp.append(Piece((r, c), color=='R', 'R', v=val))
                 elif r >= 6:
-                    #read in val
-                    val = 0
+                    if color == 'B':
+                        #val = int(input("%s%d: " % (cToA(c), r)))
+                        pass
                     temp.append(Piece((r, c), color=='B', 'B', v=val))
                 else:
                     temp.append(None)
@@ -76,7 +92,7 @@ class Board:
             self.board.append(temp)
 
     def __str__(self):
-        s = "  A  B  C  D  E  F  G  H  J  K\n"
+        s = "  A  B  C  D  E  F  G  H  I  J\n"
         for r in range(size):
             s += "  --" + " --"*(size-1) + " \n%d|" % (size-r-1)
             for c in range(size):
@@ -87,6 +103,43 @@ class Board:
                 else: 
                     s += str(self.board[9-r][c]) + "|"
             s += "%d\n" % (size-r-1)
-        s += "  --" + " --"*(size-1) + "\n  A  B  C  D  E  F  G  H  J  K"
+        s += "  --" + " --"*(size-1) + "\n  A  B  C  D  E  F  G  H  I  J"
 
         return s
+
+    def writeHValues(self, file):
+        f = open(file, "w")
+        for r in range(size):
+            for c in range(size):
+                if self.board[r][c] != None:
+                    f.write("%s%d: %s\n" % (cToA(c), r, hex(self.board[r][c].h)))
+
+        f.close()
+
+    def readHValues(self, file):
+        f = open(file, "r")
+        content = [x.strip('\n') for x in f.readlines()]
+        for i in range(len(content)):
+            data = content[i]
+            r = int(data[1])
+            c = AToc(data[0])
+            self.board[r][c].setH(int(data[4:], 16))
+
+    def writeCValues(self, file):
+        f = open(file, "w")
+        for r in range(size):
+            for c in range(size):
+                if self.board[r][c] != None:
+                    self.board[r][c].commit()
+                    f.write("%s%d: %s\n" % (cToA(c), r, hex(self.board[r][c].c)))
+
+        f.close()
+
+    def readCValues(self, file):
+        f = open(file, "r")
+        content = [x.strip('\n') for x in f.readlines()]
+        for i in range(len(content)):
+            data = content[i]
+            r = int(data[1])
+            c = AToc(data[0])
+            self.board[r][c].commit(int(data[4:], 16))
