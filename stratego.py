@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import random
 
 #RFC 2409, group ID 14
@@ -13,10 +15,20 @@ def cToA(c):
 def AToc(a):
     return ord(a) - ord('A')
 
+def rank(r):
+    if r == 'S':
+        return 1
+    elif r == 'b':
+        return 11
+    elif r == 'F':
+        return 12
+    else:
+        return int(r)
+
+
 class Piece:
     def __init__(self, sLoc, mine, color, v=0):
         self.sLoc = sLoc
-        self.cLoc = sLoc
         self.mine = mine
         self.color = color
         if self.mine:
@@ -32,8 +44,10 @@ class Piece:
     def __str__(self):
         if self.v == 0:
             vv = '?'
-        elif self.v == 10:
+        elif self.v == 1:
             vv = 'S'
+        elif self.v == 10:
+            vv = '0'
         elif self.v == 11:
             vv = 'b'
         elif self.v == 12:
@@ -78,13 +92,11 @@ class Board:
                 val = 0
                 if r <= 3:
                     if color == 'R':
-                        #val = int(input("%s%d: " % (cToA(c), r)))
-                        pass
+                        val = rank(input("%s%d: " % (cToA(c), r)))
                     temp.append(Piece((r, c), color=='R', 'R', v=val))
                 elif r >= 6:
                     if color == 'B':
-                        #val = int(input("%s%d: " % (cToA(c), r)))
-                        pass
+                        val = rank(input("%s%d: " % (cToA(c), r)))
                     temp.append(Piece((r, c), color=='B', 'B', v=val))
                 else:
                     temp.append(None)
@@ -143,3 +155,61 @@ class Board:
             r = int(data[1])
             c = AToc(data[0])
             self.board[r][c].commit(int(data[4:], 16))
+
+    def writeVValues(self, file):
+        f = open(file, "w")
+        for r in range(size):
+            for c in range(size):
+                if self.board[r][c] != None:
+                    f.write("%s%d: %s\n" % (cToA(c), r, hex(self.board[r][c].v)))
+
+        f.close()
+
+    def writeRValues(self, file):
+        f = open(file, "w")
+        for r in range(size):
+            for c in range(size):
+                if self.board[r][c] != None:
+                    f.write("%s%d: %s\n" % (cToA(c), r, hex(self.board[r][c].r)))
+
+        f.close()
+
+    def move(self, m):
+        start = (m[1], AToc(m[0]))
+        end = (m[4], AToc(m[3]))
+        
+        if end == None:
+            self.board[end[0]][end[1]] = self.board[start[0]][start[1]]
+        else:
+            if self.board[start[0]][start[1]].mine:
+                print("%s" % hex(self.board[start[0]][start[1]].r))
+            else:
+                print("%s" % hex(self.board[end[0]][end[1]].r))
+                
+            vOpp = rank(input("Opponent Piece Rank: "))
+            rOpp = int(input("Opponent Piece r-value: "), 16)
+            
+            if self.board[start[0]][start[1]].mine:
+                ve = self.board[end[0]][end[1]].verify(vOpp, rOpp)
+            else:
+                ve = self.board[start[0]][start[1]].verify(vOpp, rOpp)
+            if ~ve:
+                print("Verification Error")
+            else:
+                if self.board[end[0]][end[1]].v > self.board[start[0]][start[1]].v:
+                    self.board[start[0]][start[1]] = None
+                elif self.board[start[0]][start[1]].v > self.board[end[0]][end[1]].v:
+                    self.board[end[0]][end[1]] = self.board[start[0]][start[1]]
+
+
+                
+if __name__ == "__main__":
+    b = Board(input("Side (R/B): "))
+    b.writeHValues(input("h-values file to write to: "))
+    b.readHValues(input("h-values file to read from: "))
+    b.writeCValues(input("c-values file to write to: "))
+    b.readCValues(input("c-values file to read from: "))
+
+    while True:
+        print(b)
+        b.move(input("Move: "))
